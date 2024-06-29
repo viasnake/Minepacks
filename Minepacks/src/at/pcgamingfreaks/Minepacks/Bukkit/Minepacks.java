@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2023 GeorgH93
+ *   Copyright (C) 2024 GeorgH93
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import at.pcgamingfreaks.Bukkit.Config.PermissionLoader;
 import at.pcgamingfreaks.Bukkit.MCVersion;
 import at.pcgamingfreaks.Bukkit.ManagedUpdater;
 import at.pcgamingfreaks.Bukkit.Message.Message;
+import at.pcgamingfreaks.Bukkit.Util.InventoryUtils;
 import at.pcgamingfreaks.Bukkit.Util.Utils;
 import at.pcgamingfreaks.ConsoleColor;
 import at.pcgamingfreaks.Minepacks.Bukkit.API.Backpack;
@@ -38,10 +39,10 @@ import at.pcgamingfreaks.Minepacks.Bukkit.SpecialInfoWorker.NoDatabaseWorker;
 import at.pcgamingfreaks.Minepacks.MagicValues;
 import at.pcgamingfreaks.Plugin.IPlugin;
 import at.pcgamingfreaks.ServerType;
-import at.pcgamingfreaks.Util.StringUtils;
 import at.pcgamingfreaks.Updater.UpdateResponseCallback;
+import at.pcgamingfreaks.Util.StringUtils;
 import at.pcgamingfreaks.Version;
-import lombok.Getter;
+
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
@@ -53,6 +54,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import lombok.Getter;
 
 import java.io.File;
 import java.util.Collection;
@@ -121,7 +124,12 @@ public class Minepacks extends JavaPlugin implements MinepacksPlugin, IPlugin
 
 	private boolean checkMcVersion()
 	{
-		if(MCVersion.is(MCVersion.UNKNOWN) || !MCVersion.isUUIDsSupportAvailable() || MCVersion.isNewerThan(MCVersion.MC_NMS_1_20_R4))
+		if (MCVersion.isNewerThan(MCVersion.MC_NMS_1_20_R3) && ServerType.isPaperCompatible())
+		{
+			getLogger().warning("Paper support is experimental! Use at your own risk!");
+			getLogger().warning("No guarantee for data integrity! Backup constantly!");
+		}
+		if (MCVersion.is(MCVersion.UNKNOWN) || !MCVersion.isUUIDsSupportAvailable() || MCVersion.isNewerThan(MCVersion.MC_NMS_1_21_R1))
 		{
 			this.warnOnVersionIncompatibility();
 			this.setEnabled(false);
@@ -263,11 +271,9 @@ public class Minepacks extends JavaPlugin implements MinepacksPlugin, IPlugin
 
 	public void warnOnVersionIncompatibility()
 	{
-		String name = Bukkit.getServer().getClass().getPackage().getName();
-		String[] version = name.substring(name.lastIndexOf('.') + 2).split("_");
 		getLogger().warning(ConsoleColor.RED + "################################" + ConsoleColor.RESET);
 		getLogger().warning(ConsoleColor.RED + String.format("Your minecraft version (MC %1$s) is currently not compatible with this plugins version (%2$s). " +
-				                                                     "Please check for updates!", version[0] + "." + version[1], getDescription().getVersion()) + ConsoleColor.RESET);
+				                                                     "Please check for updates!", Bukkit.getServer().getVersion(), getDescription().getVersion()) + ConsoleColor.RESET);
 		getLogger().warning(ConsoleColor.RED + "################################" + ConsoleColor.RESET);
 		Utils.blockThread(5);
 	}
@@ -316,7 +322,7 @@ public class Minepacks extends JavaPlugin implements MinepacksPlugin, IPlugin
 			return;
 		}
 		//noinspection ObjectEquality
-		if(opener.getOpenInventory().getTopInventory().getHolder() == backpack) return; // == is fine as there is only one instance of each backpack
+		if(InventoryUtils.getPlayerTopInventory(opener).getHolder() == backpack) return; // == is fine as there is only one instance of each backpack
 		if(openSound != null)
 		{
 			opener.playSound(opener.getLocation(), openSound, 1, 0);
